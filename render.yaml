@@ -2,7 +2,5 @@ services:
   - type: web
     name: ai-content-detector
     env: python
-    buildCommand: ""
-    startCommand: "python api.py"
-    plan: free
-    autoDeploy: false
+    buildCommand: "pip install -r requirements.txt"
+    startCommand: "gunicorn api:app"
