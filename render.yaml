@@ -2,5 +2,9 @@ services:
   - type: web
     name: ai-content-detector
     env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn api:app"
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -b 0.0.0.0:10000 api:app
+    envVars:
+      - key: PORT
+        value: 10000
