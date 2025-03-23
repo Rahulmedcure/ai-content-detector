@@ -3,7 +3,7 @@ from flask_cors import CORS
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 
-app = Flask(_name_)
+app = Flask(__name__)
 CORS(app)
 
 # Load tokenizer and model
