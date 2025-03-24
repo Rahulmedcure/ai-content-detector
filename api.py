@@ -1,42 +1,46 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-import torch
+import openai
+import os
 
 app = Flask(__name__)
 CORS(app)
 
-# Load tokenizer and model
-MODEL_NAME = "roberta-base-openai-detector"
-tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
-model = AutoModelForSequenceClassification.from_pretrained(MODEL_NAME)
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
-@app.route("/")
-def index():
-    return "<p style='color:green;'>✅ AI Content Detector API is running.</p>"
+@app.route('/')
+def home():
+    return 'AI Content Detector API is running.'
 
-@app.route("/predict", methods=["POST"])
+@app.route('/predict', methods=['POST'])
 def predict():
     data = request.get_json()
-    text = data.get("text", "")
+    text = data.get('text')
 
-    if not text.strip():
-        return jsonify({"error": "Text is required"}), 400
+    if not text:
+        return jsonify({'error': 'No text provided'}), 400
 
-    inputs = tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
-    with torch.no_grad():
-        outputs = model(**inputs)
-        logits = outputs.logits
-        probs = torch.softmax(logits, dim=1)
-        ai_score = probs[0][1].item()  # Class 1 is AI-generated
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "user", "content": f"Is the following text AI-generated or human-written? Just answer 'AI-generated' or 'Human-written' with a score out of 1.\n\n{text}"}
+            ],
+            temperature=0.2
+        )
 
-    result = "AI-Generated" if ai_score > 0.5 else "Human-Written"
+        result_text = response['choices'][0]['message']['content']
+        if "AI-generated" in result_text:
+            label = "AI-Generated"
+            score = 0.85
+        else:
+            label = "Human-Written"
+            score = 0.15
 
-    return jsonify({
-        "ai_score": ai_score,
-        "result": result
-    })
+        return jsonify({
+            "result": label,
+            "ai_score": score
+        })
 
-# Optional for local testing
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
