@@ -4,43 +4,43 @@ import openai
 import os
 
 app = Flask(__name__)
-CORS(app)
+# Allow only your frontend domain, or use "*" for testing
+CORS(app, resources={r"/predict": {"origins": "*"}})
 
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-@app.route('/')
-def home():
-    return 'AI Content Detector API is running.'
 
-@app.route('/predict', methods=['POST'])
+@app.route("/")
+def home():
+    return "✅ AI Content Detector API is running."
+
+
+@app.route("/predict", methods=["POST"])
 def predict():
     data = request.get_json()
-    text = data.get('text')
+    text = data.get("text", "")
 
     if not text:
-        return jsonify({'error': 'No text provided'}), 400
+        return jsonify({"error": "No input text provided"}), 400
 
     try:
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "user", "content": f"Is the following text AI-generated or human-written? Just answer 'AI-generated' or 'Human-written' with a score out of 1.\n\n{text}"}
+                {"role": "system", "content": "You are an AI content detector. Check if the following text is written by AI."},
+                {"role": "user", "content": text}
             ],
-            temperature=0.2
+            temperature=0.0,
         )
 
-        result_text = response['choices'][0]['message']['content']
-        if "AI-generated" in result_text:
-            label = "AI-Generated"
-            score = 0.85
-        else:
-            label = "Human-Written"
-            score = 0.15
+        ai_reply = response.choices[0].message.content.strip()
+        ai_score = 0.5  # Optional: placeholder AI score logic
 
-        return jsonify({
-            "result": label,
-            "ai_score": score
-        })
+        return jsonify({"result": ai_reply, "ai_score": ai_score})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
