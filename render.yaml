@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: ai-content-detector
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -b 0.0.0.0:10000 api:app
+    plan: free
+    envVars:
+      - key: TRANSFORMERS_CACHE
+        value: /tmp/huggingface

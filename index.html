@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The AI Content Detector</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #121212;
+      color: white;
+      text-align: center;
+    }
+    .overlay {
+      padding: 50px 20px;
+      min-height: 100vh;
+    }
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 20px;
+    }
+    textarea {
+      width: 80%;
+      max-width: 700px;
+      height: 200px;
+      margin-top: 20px;
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: none;
+      resize: vertical;
+    }
+    button {
+      margin-top: 20px;
+      padding: 15px 30px;
+      font-size: 16px;
+      background-color: #ff0055;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      color: white;
+    }
+    #result {
+      margin-top: 30px;
+      font-size: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="overlay">
+    <h1>Check if your content is AI-generated</h1>
+    <textarea id="inputText" placeholder="Paste your text here..."></textarea>
+    <br>
+    <button onclick="checkContent()">Check Content</button>
+    <div id="result"></div>
+  </div>
+  <script>
+    async function checkContent() {
+      const text = document.getElementById("inputText").value;
+      if (!text.trim()) {
+        alert("Please enter some text to check.");
+        return;
+      }
+
+      const apiURL = "https://ai-content-detector-dq07.onrender.com/predict";
+      document.getElementById("result").innerHTML = "Analyzing...";
+
+      try {
+        const response = await fetch(apiURL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ text })
+        });
+
+        const data = await response.json();
+        if (data.error) throw new Error(data.error);
+
+        document.getElementById("result").innerHTML = `
+          <strong>Result:</strong> ${data.result} <br>
+          <strong>AI Score:</strong> ${(data.ai_score * 100).toFixed(2)}%
+        `;
+      } catch (error) {
+        console.error(error);
+        document.getElementById("result").innerHTML = "Error: " + error.message;
+      }
+    }
+  </script>
+</body>
+</html>
