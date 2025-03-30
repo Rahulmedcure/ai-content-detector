@@ -1,37 +1,45 @@
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-import torch
-import numpy as np
+from transformers import pipeline
 
 app = Flask(__name__)
 CORS(app)
 
-# Load model and tokenizer
-model_name = "roberta-base-openai-detector"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSequenceClassification.from_pretrained(model_name)
+# Load model locally (using distilbert-base-uncased-finetuned-sst-2-english as example)
+classifier = pipeline("text-classification", model="distilbert-base-uncased-finetuned-sst-2-english", return_all_scores=True)
 
-@app.route("/", methods=["GET"])
+@app.route("/")
 def home():
-    return "✅ AI Content Detector API is running."
+    return "<p>✅ AI Content Detector API is running.</p>"
 
 @app.route("/predict", methods=["POST"])
 def predict():
     try:
         data = request.get_json()
         text = data.get("text", "")
-        if not text.strip():
-            return jsonify({"error": "Text is empty"}), 400
 
-        inputs = tokenizer(text, return_tensors="pt", truncation=True, padding=True)
-        outputs = model(**inputs)
-        probs = torch.softmax(outputs.logits, dim=1).detach().numpy()[0]
-        result = "AI-Generated" if probs[1] > 0.5 else "Human-Written"
+        if not text.strip():
+            return jsonify({"error": "No input text provided."}), 400
+
+        # Split into words and score each (mocked)
+        words = text.split()
+        highlighted = []
+        ai_score_total = 0
+
+        for word in words:
+            score = classifier(word)[0][1]["score"]
+            ai_score_total += score
+            highlighted.append({"word": word, "is_ai": score > 0.6})
+
+        avg_score = ai_score_total / len(words)
+
+        result = "Likely AI-generated" if avg_score > 0.5 else "Likely Human-written"
 
         return jsonify({
             "result": result,
-            "ai_score": float(probs[1])
+            "ai_score": round(avg_score, 4),
+            "tokens": highlighted
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500

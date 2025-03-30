@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,11 +9,12 @@
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #121212;
+      background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e') no-repeat center center/cover;
       color: white;
       text-align: center;
     }
     .overlay {
+      background-color: rgba(0, 0, 0, 0.7);
       padding: 50px 20px;
       min-height: 100vh;
     }
@@ -41,9 +43,32 @@
       cursor: pointer;
       color: white;
     }
+    button:hover {
+      background-color: #e6004c;
+    }
     #result {
       margin-top: 30px;
       font-size: 20px;
+    }
+    #highlighted {
+      margin-top: 30px;
+      background: #fff;
+      color: #000;
+      padding: 20px;
+      width: 80%;
+      max-width: 700px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+      border-radius: 10px;
+    }
+    .highlight {
+      background-color: yellow;
+    }
+    .footer {
+      margin-top: 50px;
+      font-size: 14px;
+      color: #ccc;
     }
   </style>
 </head>
@@ -54,7 +79,10 @@
     <br>
     <button onclick="checkContent()">Check Content</button>
     <div id="result"></div>
+    <div id="highlighted"></div>
+    <div class="footer">Powered by Rahul Datta | theaicontentdetector.com</div>
   </div>
+
   <script>
     async function checkContent() {
       const text = document.getElementById("inputText").value;
@@ -64,7 +92,9 @@
       }
 
       const apiURL = "https://ai-content-detector-dq07.onrender.com/predict";
+
       document.getElementById("result").innerHTML = "Analyzing...";
+      document.getElementById("highlighted").innerHTML = "";
 
       try {
         const response = await fetch(apiURL, {
@@ -75,16 +105,26 @@
           body: JSON.stringify({ text })
         });
 
+        if (!response.ok) throw new Error("Server error: " + response.status);
+
         const data = await response.json();
-        if (data.error) throw new Error(data.error);
 
         document.getElementById("result").innerHTML = `
           <strong>Result:</strong> ${data.result} <br>
-          <strong>AI Score:</strong> ${(data.ai_score * 100).toFixed(2)}%
+          <strong>AI Score:</strong> ${data.ai_score.toFixed(4)}
         `;
+
+        // Dummy token highlighting simulation (highlight every 5th word)
+        const words = text.split(" ");
+        const highlightedHTML = words.map((word, index) =>
+          index % 5 === 0 ? `<span class="highlight">${word}</span>` : word
+        ).join(" ");
+        document.getElementById("highlighted").innerHTML = highlightedHTML;
+
       } catch (error) {
         console.error(error);
-        document.getElementById("result").innerHTML = "Error: " + error.message;
+        alert("Error: Failed to fetch from the server. Please try again later.");
+        document.getElementById("result").innerHTML = "";
       }
     }
   </script>
