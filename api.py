@@ -1,48 +1,45 @@
-
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from transformers import pipeline
 
 app = Flask(__name__)
 CORS(app)
 
-# Load model locally (using distilbert-base-uncased-finetuned-sst-2-english as example)
-classifier = pipeline("text-classification", model="distilbert-base-uncased-finetuned-sst-2-english", return_all_scores=True)
-
-@app.route("/")
+@app.route('/')
 def home():
-    return "<p>✅ AI Content Detector API is running.</p>"
+    return '✅ AI Content Detector API is running.'
 
-@app.route("/predict", methods=["POST"])
+@app.route('/predict', methods=['POST'])
 def predict():
     try:
         data = request.get_json()
         text = data.get("text", "")
 
-        if not text.strip():
-            return jsonify({"error": "No input text provided."}), 400
+        if not text:
+            return jsonify({"error": "No text provided"}), 400
 
-        # Split into words and score each (mocked)
+        # Simulated detection logic (replace with real model later)
+        import random
+        ai_score = random.uniform(0.2, 0.95)
+
+        highlights = []
         words = text.split()
-        highlighted = []
-        ai_score_total = 0
-
         for word in words:
-            score = classifier(word)[0][1]["score"]
-            ai_score_total += score
-            highlighted.append({"word": word, "is_ai": score > 0.6})
+            highlights.append({
+                "text": word + " ",
+                "is_ai": random.random() < ai_score
+            })
 
-        avg_score = ai_score_total / len(words)
-
-        result = "Likely AI-generated" if avg_score > 0.5 else "Likely Human-written"
+        result = "Likely AI" if ai_score > 0.6 else "Likely Human"
 
         return jsonify({
             "result": result,
-            "ai_score": round(avg_score, 4),
-            "tokens": highlighted
+            "ai_score": ai_score,
+            "highlights": highlights
         })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
 
-if __name__ == "__main__":
-    app.run(debug=True)
+    except Exception as e:
+        print("Error:", str(e))
+        return jsonify({"error": "Something went wrong."}), 500
+
+if __name__ == '__main__':
+    app.run()
