@@ -1,3 +1,12 @@
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+import torch
+import torch.nn.functional as F
+import re
+
+app = Flask(__name__)           # ← make sure this is here BEFORE @app.route
+CORS(app)
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
