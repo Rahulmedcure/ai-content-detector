@@ -7,9 +7,9 @@ def predict():
         if not text:
             return jsonify({"error": "No text provided"}), 400
 
-        # Token limit check (500 tokens max)
-        tokenized = tokenizer(text, return_tensors="pt", truncation=False)
-        if tokenized['input_ids'].shape[1] > 500:
+        # Token limit check (max 500 tokens safely)
+        tokenized = tokenizer.encode(text, truncation=False)
+        if len(tokenized) > 500:
             return jsonify({"error": "Text too long. Please submit up to 500 tokens."}), 400
 
         # Split text into sentences
