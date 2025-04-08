@@ -5,8 +5,13 @@ import torch
 import torch.nn.functional as F
 import re
 
-app = Flask(__name__)           # ← make sure this is here BEFORE @app.route
+app = Flask(__name__)
 CORS(app)
+
+# Load model + tokenizer
+model_name = "roberta-base-openai-detector"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSequenceClassification.from_pretrained(model_name)
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
