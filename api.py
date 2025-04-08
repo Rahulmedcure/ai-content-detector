@@ -12,6 +12,9 @@ CORS(app)
 model_name = "roberta-base-openai-detector"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
+# Split helper
+def split_into_sentences(text):
+    return re.split(r'(?<=[.!?]) +', text.strip())
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
