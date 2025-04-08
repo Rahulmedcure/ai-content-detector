@@ -1,27 +1,3 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-from transformers import AutoTokenizer, AutoModelForSequenceClassification
-import torch
-import torch.nn.functional as F
-import re
-
-app = Flask(__name__)
-CORS(app)
-
-# Load the AI detection model
-model_name = "roberta-base-openai-detector"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-model = AutoModelForSequenceClassification.from_pretrained(model_name)
-
-def split_into_sentences(text):
-    # Simple sentence splitter using regex
-    sentences = re.split(r'(?<=[.!?]) +', text.strip())
-    return [s for s in sentences if s]
-
-@app.route('/')
-def home():
-    return '✅ Rahul’s AI Content Detector API is running.'
-
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
@@ -30,6 +6,11 @@ def predict():
 
         if not text:
             return jsonify({"error": "No text provided"}), 400
+
+        # Token limit check (500 tokens max)
+        tokenized = tokenizer(text, return_tensors="pt", truncation=False)
+        if tokenized['input_ids'].shape[1] > 500:
+            return jsonify({"error": "Text too long. Please submit up to 500 tokens."}), 400
 
         # Split text into sentences
         sentences = split_into_sentences(text)
@@ -61,6 +42,3 @@ def predict():
     except Exception as e:
         print("Error:", str(e))
         return jsonify({"error": "Something went wrong."}), 500
-
-if __name__ == '__main__':
-    app.run()
