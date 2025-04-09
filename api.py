@@ -8,13 +8,15 @@ import re
 app = Flask(__name__)
 CORS(app)
 
-# Load model + tokenizer
-model_name = "roberta-base-openai-detector"
+# Use lighter DistilBERT model (sentiment classification)
+model_name = "distilbert-base-uncased-finetuned-sst-2-english"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
-# Split helper
+
+# Sentence splitter
 def split_into_sentences(text):
     return re.split(r'(?<=[.!?]) +', text.strip())
+
 @app.route('/predict', methods=['POST'])
 def predict():
     try:
@@ -24,12 +26,11 @@ def predict():
         if not text:
             return jsonify({"error": "No text provided"}), 400
 
-        # Token limit check (max 500 tokens safely)
+        # Token limit check (500 tokens)
         tokenized = tokenizer.encode(text, truncation=False)
         if len(tokenized) > 500:
             return jsonify({"error": "Text too long. Please submit up to 500 tokens."}), 400
 
-        # Split text into sentences
         sentences = split_into_sentences(text)
         highlights = []
         total_score = 0
@@ -39,6 +40,7 @@ def predict():
             with torch.no_grad():
                 outputs = model(**inputs)
                 probs = F.softmax(outputs.logits, dim=1)
+                # Sentiment logic: label 1 = positive (use as AI-like)
                 ai_score = probs[0][1].item()
                 total_score += ai_score
                 highlights.append({
@@ -59,3 +61,6 @@ def predict():
     except Exception as e:
         print("Error:", str(e))
         return jsonify({"error": "Something went wrong."}), 500
+
+if __name__ == '__main__':
+    app.run()
